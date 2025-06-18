@@ -9,6 +9,7 @@ import functools
 from llmtrace.core.core import log_message, log_metric, log_error, get_current_session_id
 from llmtrace.tracing.models import Message
 from llmtrace.instrumentation.base import BaseInstrumentor
+from typing import List, Dict, Any
 import asyncio
 
 # --- Mock OpenAI SDK for demonstration purposes ---

@@ -1,6 +1,6 @@
 [project]
 name = "llmtrace"
-version = "0.1.0"
+version = "0.1.4"
 description = "A lightweight LLM observability and evaluation framework."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,7 +30,7 @@ dependencies = [
   "asyncpg>=0.29.0",      # Para PostgreSQL asíncrono
   "httpx>=0.27.0",        # Cliente HTTP asíncrono (para instrumentadores)
   "pydantic>=2.0.0",      # Para modelos de datos (tracing/models.py)
-  "python-json-logger>=0.1.0", # Para logs en formato JSON
+  "python-json-logger>=3.0.0", # Para logs en formato JSON
 ]
 
 [project.optional-dependencies]

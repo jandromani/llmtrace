@@ -1,11 +1,5 @@
 """
-LLMTrace: Un framework ligero de observabilidad y evaluación para aplicaciones con LLMs.
-
-Este paquete proporciona herramientas para instrumentar interacciones con modelos de lenguaje,
-almacenar trazas, métricas y feedback, y visualizar estos datos a través de un dashboard web
-o la interfaz de línea de comandos.
-
-Para empezar, llama a `llmtrace.init()` al inicio de tu aplicación.
+LLMTrace: framework ligero de observabilidad y evaluación para aplicaciones con LLMs.
 """
 
 import os
@@ -14,30 +8,62 @@ from dotenv import load_dotenv
 # Cargar variables de entorno desde .env si existe
 load_dotenv()
 
-# Configurar el logger de LLMTrace
+# --------------------------------------------------------------------------- #
+# Configuración de logging
+# --------------------------------------------------------------------------- #
 from llmtrace._logging import setup_logger
+
 _log_format = os.getenv("LLMTRACE_LOG_FORMAT", "text").lower()
-_json_format_default = _log_format == "json"
-setup_logger(json_format=_json_format_default)
+setup_logger(json_format=_log_format == "json")
 
-# Importar las funciones públicas para facilitar el acceso
-from llmtrace.core.core import init, session, get_current_session_id, log_message, log_metric, add_feedback, log_error, get_sessions, get_messages, get_metrics, get_feedback, get_errors
-from llmtrace.instrumentation.base import BaseInstrumentor
-from llmtrace.instrumentation.openai import OpenAIInstrumentor
-from llmtrace.instrumentation.huggingface import HFInstrumentor
-from llmtrace.instrumentation.langchain import LangChainCallbackHandler
-from llmtrace.storage.backends import StorageBackend
-from llmtrace.tracing.models import Session, Message, Metric, Feedback, Error
+# --------------------------------------------------------------------------- #
+# API pública de alto nivel
+# --------------------------------------------------------------------------- #
+from llmtrace.core.core import (  # noqa: F401
+    init,
+    session,
+    get_current_session_id,
+    log_message,
+    log_metric,
+    add_feedback,
+    log_error,
+    get_sessions,
+    get_messages,
+    get_metrics,
+    get_feedback,
+    get_errors,
+)
+from llmtrace.instrumentation.base import BaseInstrumentor  # noqa: F401
+from llmtrace.instrumentation.openai import OpenAIInstrumentor  # noqa: F401
+from llmtrace.instrumentation.huggingface import HFInstrumentor  # noqa: F401
 
-# Función para cerrar la conexión a la base de datos
-async def close():
+# LangChain es opcional: sólo se expone si el usuario instaló langchain-core
+try:
+    from llmtrace.instrumentation.langchain import (  # noqa: F401
+        LangChainCallbackHandler,
+    )
+except ImportError:  # pragma: no cover
+    LangChainCallbackHandler = None  # type: ignore
+
+from llmtrace.storage.backends import StorageBackend  # noqa: F401
+from llmtrace.tracing.models import (  # noqa: F401
+    Session,
+    Message,
+    Metric,
+    Feedback,
+    Error,
+)
+
+# --------------------------------------------------------------------------- #
+# Utilidades
+# --------------------------------------------------------------------------- #
+async def close() -> None:
     """
     Cierra la conexión activa a la base de datos de LLMTrace.
-    Debe llamarse al finalizar la aplicación para asegurar que todos los datos
-    se persistan correctamente y liberar recursos.
     """
-    from llmtrace.core.core import _db_instance
     import logging
+    from llmtrace.core.core import _db_instance
+
     logger = logging.getLogger("llmtrace")
     if _db_instance:
         await _db_instance.close()
@@ -45,8 +71,10 @@ async def close():
     else:
         logger.warning("LLMTrace was not initialized or already closed.")
 
-# Versión del paquete (se actualizará automáticamente con setuptools_scm)
+# --------------------------------------------------------------------------- #
+# Versión del paquete (rellenada por setuptools_scm)
+# --------------------------------------------------------------------------- #
 try:
-    from ._version import version as __version__
-except ImportError:
-    __version__ = "0.0.0+unknown" # Fallback durante el desarrollo
+    from ._version import version as __version__  # type: ignore
+except ImportError:  # pragma: no cover
+    __version__ = "0.0.0+unknown"
