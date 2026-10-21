@@ -1,6 +1,7 @@
 import pytest
 import os
 import asyncio # Import asyncio
+from unittest.mock import patch
 from datetime import datetime
 from llmtrace.core import core
 from llmtrace.storage.sqlite import SQLiteBackend # Import SQLiteBackend directly for testing
@@ -107,10 +108,12 @@ async def test_log_error(setup_llmtrace): # Made async
     await ctx.__aexit__(None, None, None)
 
 @pytest.mark.asyncio # Mark test as async
-async def test_no_session_warning(caplog, setup_llmtrace):
+async def test_no_session_warning(setup_llmtrace):
     # Re-initialize to test warning when DB is not initialized
     if core._db_instance:
         await core._db_instance.close() # Await close
     core._db_instance = None
-    await core.log_message(123, "user", "Should not log") # Await log_message
-    assert "LLMTrace not initialized. Message not logged." in caplog.text
+    with patch.object(core.logger, "warning") as warning:
+        result = await core.log_message(123, "user", "Should not log")
+    assert result is None
+    warning.assert_called_once_with("LLMTrace not initialized. Message not logged.")
