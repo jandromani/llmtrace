@@ -41,13 +41,13 @@ def test_setup_logger_text_format(capsys):
     logger.info("Test message for text format.")
     captured = capsys.readouterr()
     
-    assert "Test message for text format." in captured.out
-    assert " - INFO - " in captured.out
-    assert "llmtrace - INFO - LLMTrace logger configured. Format: Text, Level: INFO" in captured.out
+    assert "Test message for text format." in captured.err
+    assert " - INFO - " in captured.err
+    assert "llmtrace - INFO - LLMTrace logger configured. Format: Text, Level: INFO" in captured.err
     
     # Asegurarse de que no es JSON
     try:
-        json.loads(captured.out.splitlines()[0])
+        json.loads(captured.err.splitlines()[0])
         assert False, "Log output should not be JSON"
     except json.JSONDecodeError:
         pass # Expected for text format
@@ -64,7 +64,7 @@ def test_setup_logger_json_format(capsys):
     captured = capsys.readouterr()
     
     # El primer log es la confirmación de configuración, el segundo es el mensaje de prueba
-    log_lines = captured.out.strip().splitlines()
+    log_lines = captured.err.strip().splitlines()
     
     # Verificar el mensaje de configuración
     assert "LLMTrace logger configured. Format: JSON, Level: DEBUG" in log_lines[0]
@@ -91,9 +91,9 @@ def test_setup_logger_level_from_env(capsys):
     
     captured = capsys.readouterr()
     
-    assert "This info message should not appear." not in captured.out
-    assert "This warning message should appear." in captured.out
-    assert "LLMTrace logger configured. Format: Text, Level: WARNING" in captured.out
+    assert "This info message should not appear." not in captured.err
+    assert "This warning message should appear." in captured.err
+    assert logger.level == logging.WARNING
 
 def test_setup_logger_level_override(capsys):
     """
@@ -108,6 +108,6 @@ def test_setup_logger_level_override(capsys):
     
     captured = capsys.readouterr()
     
-    assert "This info message should appear." in captured.out
-    assert "This error message should appear." in captured.out
-    assert "LLMTrace logger configured. Format: Text, Level: INFO" in captured.out
+    assert "This info message should appear." in captured.err
+    assert "This error message should appear." in captured.err
+    assert "LLMTrace logger configured. Format: Text, Level: INFO" in captured.err

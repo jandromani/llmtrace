@@ -11,6 +11,7 @@ __pycache__/
 
 # Builds
 /dist/
+/build/
 /llmtrace.egg-info/
 *.whl
 *.tar.gz

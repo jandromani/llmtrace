@@ -1,78 +1,53 @@
-> [!WARNING]
-> **Historical alpha prototype (June 2025). Not production instrumentation.**
-> The published OpenAI and Hugging Face example adapters currently wrap **mock provider classes**; they do not establish telemetry from real provider SDK calls. Tokens and costs in those examples are synthetic or illustrative. This repository has not been validated against current provider releases or independently audited for security/reliability. Treat screenshots as prototype illustrations, not live customer traces.
->
-> For a real production integration, first replace mocks with supported SDK callbacks, add live-provider opt-in integration tests, secure prompt/PII handling, error/streaming support, and repeatable CI. This project remains in the historical archive rather than the flagship engineering showcase.
+# LLMTRACE · historical alpha
 
-# LLMTrace: Observabilidad y Trazabilidad para Aplicaciones con LLM
+This repository is a June 2025 Python prototype for local session storage, metrics and a Flask dashboard. **The published OpenAI and Hugging Face adapters wrap mock provider classes.** They do not intercept the current provider SDKs. The token and cost values shown in examples are illustrative; this is not production instrumentation.
 
-**LLMTrace** es una librería open-source en Python diseñada como un toolkit de observabilidad y evaluación para aplicaciones con modelos de lenguaje. Permite a los desarrolladores instrumentar sus apps de IA generativa para registrar automáticamente prompts y respuestas, medir métricas clave y visualizar trazas de las sesiones.
+The repository is retained as a technical archive. Before using it for real workloads, the adapters need real SDK integration, opt-in integration tests, privacy controls for prompt data, streaming and failure handling, and a passing cross-platform test suite.
 
-[![SLSA Level 1](https://slsa.dev/images/gh-badge-level-1.svg)](https://slsa.dev)
+## What is in the repository
 
-## Características Principales (v0)
+- SQLite-backed sessions, messages, metrics, feedback and errors; experimental PostgreSQL backend.
+- A local Flask dashboard and a command-line interface.
+- Mock provider adapters used to explore trace shape and storage behavior.
+- Source and tests that can be inspected independently of the screenshots.
 
-*   **Instrumentación Automática**: Captura prompts, respuestas, tokens, costos y errores de LLMs populares (OpenAI, HuggingFace, LangChain).
-*   **Almacenamiento Local Persistente**: Utiliza SQLite por defecto para guardar todos los datos de trazabilidad. Soporte experimental para PostgreSQL.
-*   **Dashboard Web Ligero**: Una interfaz web básica para visualizar sesiones y métricas.
-*   **Interfaz de Línea de Comandos (CLI)**: Herramientas para listar, mostrar detalles, exportar y eliminar datos.
-*   **Migraciones de Base de Datos**: Gestión de esquema con Alembic.
+## Local demonstration
 
-## Instalación
+Requires Python 3.10 or later. Create an isolated environment and install the package:
 
-LLMTrace requiere Python 3.9 o superior.
+```bash
+python -m venv .venv
+python -m pip install -e ".[dev]"
+```
 
-1.  **Instalación básica:**
-    \`\`\`bash
-    pip install llmtrace
-    \`\`\`
-
-2.  **Instalación con extras (dashboard, evaluación, backends DB, instrumentadores):**
-    \`\`\`bash
-    pip install "llmtrace[all]" # Instala todas las dependencias opcionales
-    # O selecciona solo las que necesites:
-    # pip install "llmtrace[openai,postgresql]"
-    \`\`\`
-
-## Uso Rápido
+The following example records a simulated call. It makes **no network request to OpenAI**:
 
 ```python
-import llmtrace
-from llmtrace.instrumentation.openai import OpenAIInstrumentor
-import openai
 import asyncio
+import llmtrace
+from llmtrace.instrumentation.openai import OpenAIInstrumentor, mock_openai
 
 async def main():
-    # Inicializa LLMTrace (crea llmtrace.db en ~/.llmtrace por defecto)
-    # Puedes usar LLMTRACE_DB_URL="memory://" para una base de datos en memoria para tests.
-    await llmtrace.init() 
-    
-    # Instrumenta OpenAI
-    OpenAIInstrumentor().instrument()
+    await llmtrace.init("demo-llmtrace.db")
+    instrumentor = OpenAIInstrumentor()
+    instrumentor.instrument()
+    try:
+        async with llmtrace.session(name="Mock demonstration", user_id="demo"):
+            result = await mock_openai.ChatCompletion.create(
+                model="demo-model",
+                messages=[{"role": "user", "content": "Hello from a local demo"}],
+            )
+            print(result["choices"][0]["message"]["content"])
+        print("Sessions:", len(await llmtrace.get_sessions()))
+    finally:
+        instrumentor.uninstrument()
+        await llmtrace.close()
 
-    # Todas las llamadas a openai.ChatCompletion.create serán registradas
-    res = await openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "Escribe un haiku sobre la observabilidad."}]
-    )
-    print(res.choices[0].message.content)
+asyncio.run(main())
+```
 
-    # Inicia una sesión para agrupar trazas
-    async with llmtrace.session(name="MiPrimerHaiku", user_id="anon_user"):
-        await openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": "Otro haiku, esta vez sobre el código."}]
-        )
+Run `pytest` for the repository tests. Their result, if passing, validates the implemented fixtures and local behavior; it does not validate real provider telemetry.
 
-    # Consulta datos programáticamente
-    sessions = await llmtrace.get_sessions()
-    print(f"\nSesiones registradas: {len(sessions)}")
+## Project status and license
 
-    # Inicia el dashboard web
-    # llmtrace web
-    # Abre tu navegador en http://localhost:5000 (por defecto)
-    
-    await llmtrace.close() # Cierra la conexión a la DB
-    
-if __name__ == "__main__":
-    asyncio.run(main())
+Version 0.1.4 is an alpha. The repository code is MIT licensed; see [LICENSE](LICENSE). Third-party attribution is recorded in [LICENSE-THIRD-PARTY.md](LICENSE-THIRD-PARTY.md). A PyPI release, CI badge or provenance level must not be inferred from this README; inspect the [workflow history](https://github.com/jandromani/llmtrace/actions) and [PyPI project](https://pypi.org/project/llmtrace/) separately.

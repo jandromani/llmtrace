@@ -1,80 +1,35 @@
-name: CI
+name: Historical alpha verification
 
 on:
   push:
-    branches:
-      - main
+    branches: [master]
   pull_request:
-    branches:
-      - main
+    branches: [master]
+
+permissions:
+  contents: read
 
 jobs:
-  lint:
+  verify:
+    name: Local behavior and package / Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install black isort flake8
-      - name: Run linters
-        run: |
-          black --check .
-          isort --check-only .
-          flake8 .
-
-  test:
-    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
-        os: [ubuntu-latest, macos-latest] # macos-latest soporta arm64 en Apple Silicon
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[all,dev]" # Instala el paquete en modo editable y todas las dependencias
-      - name: Run tests
-        run: pytest
+      - name: Install package and test tools
+        run: python -m pip install -e ".[dev]" build
+      - name: Compile source
+        run: python -m compileall -q llmtrace
+      - name: Run local behavior tests
+        run: python -m pytest -q
+      - name: Build wheel and source distribution
+        run: python -m build
 
-  test-cli-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python 3.x
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-          cache: 'pip'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[all,dev]"
-      - name: Run CLI tests
-        # Ejemplo de test CLI básico en Windows
-        # Asegúrate de que tus tests CLI sean robustos para diferentes OS
-        run: |
-          llmtrace --help
-          # Puedes añadir más comandos CLI aquí para validar su ejecución
-          # pytest tests/e2e/test_cli.py # Si tienes tests CLI específicos
-
-  # Placeholder para el job de SLSA Provenance (se moverá a slsa-build.yml)
-  # slsa-provenance:
-  #   needs: [lint, test, test-cli-windows]
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write # Para subir la provenance
-  #     id-token: write # Para firmar con OIDC
-  #   steps:
-  #     - name: Placeholder for SLSA Build and Sign
-  #       run: echo "SLSA build and sign will be handled by a dedicated workflow."
+# This workflow tests local fixtures and packaging. It does not validate
+# live provider SDK integrations, security, SLSA provenance or PyPI publishing.

@@ -5,7 +5,7 @@ Permite configurar el formato (texto o JSON) y el nivel de los logs.
 
 import logging
 import os
-from pythonjsonlogger import jsonlogger as JsonFormatter # type: ignore
+from pythonjsonlogger.json import JsonFormatter
 
 def setup_logger(json_format: bool = False, level: str | None = None):
     """

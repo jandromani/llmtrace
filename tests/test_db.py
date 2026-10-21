@@ -2,6 +2,7 @@ import pytest
 import os
 from datetime import datetime, timedelta
 from llmtrace.storage.sqlite import SQLiteBackend # Import SQLiteBackend directly for testing
+from llmtrace.tracing.models import Session, Message, Metric, Feedback, Error
 import aiosqlite # Use aiosqlite for async DB operations
 
 # Use a temporary database for testing
@@ -39,7 +40,7 @@ async def test_database_initialization(db_instance, temp_db_path): # Made async
 @pytest.mark.asyncio # Mark test as async
 async def test_insert_and_get_session(db_instance): # Made async
     start_time = datetime.now()
-    session = db_instance.Session(start_time=start_time) # Use db_instance.Session
+    session = Session(start_time=start_time) # Use db_instance.Session
     session_id = await db_instance.insert_session(session) # Await DB operation
     assert session_id is not None
     assert session.id == session_id
@@ -53,7 +54,7 @@ async def test_insert_and_get_session(db_instance): # Made async
 
 @pytest.mark.asyncio # Mark test as async
 async def test_update_session(db_instance): # Made async
-    session = db_instance.Session(start_time=datetime.now()) # Use db_instance.Session
+    session = Session(start_time=datetime.now()) # Use db_instance.Session
     session_id = await db_instance.insert_session(session) # Await DB operation
 
     updated_session = await db_instance.get_session(session_id) # Await DB operation
@@ -69,10 +70,10 @@ async def test_update_session(db_instance): # Made async
 
 @pytest.mark.asyncio # Mark test as async
 async def test_insert_and_get_message(db_instance): # Made async
-    session = db_instance.Session(start_time=datetime.now()) # Use db_instance.Session
+    session = Session(start_time=datetime.now()) # Use db_instance.Session
     session_id = await db_instance.insert_session(session) # Await DB operation
 
-    message = db_instance.Message( # Use db_instance.Message
+    message = Message( # Use db_instance.Message
         session_id=session_id,
         role="user",
         content="Hello LLM!",
@@ -91,10 +92,10 @@ async def test_insert_and_get_message(db_instance): # Made async
 
 @pytest.mark.asyncio # Mark test as async
 async def test_insert_metric(db_instance): # Made async
-    session = db_instance.Session(start_time=datetime.now()) # Use db_instance.Session
+    session = Session(start_time=datetime.now()) # Use db_instance.Session
     session_id = await db_instance.insert_session(session) # Await DB operation
 
-    metric = db_instance.Metric( # Use db_instance.Metric
+    metric = Metric( # Use db_instance.Metric
         session_id=session_id,
         name="latency",
         value=0.5,
@@ -109,12 +110,12 @@ async def test_insert_metric(db_instance): # Made async
 
 @pytest.mark.asyncio # Mark test as async
 async def test_insert_feedback(db_instance): # Made async
-    session = db_instance.Session(start_time=datetime.now()) # Use db_instance.Session
+    session = Session(start_time=datetime.now()) # Use db_instance.Session
     session_id = await db_instance.insert_session(session) # Await DB operation
-    message = db_instance.Message(session_id=session_id, role="user", content="test", timestamp=datetime.now()) # Use db_instance.Message
+    message = Message(session_id=session_id, role="user", content="test", timestamp=datetime.now()) # Use db_instance.Message
     message_id = await db_instance.insert_message(message) # Await DB operation
 
-    feedback = db_instance.Feedback( # Use db_instance.Feedback
+    feedback = Feedback( # Use db_instance.Feedback
         session_id=session_id,
         message_id=message_id,
         type="rating", # Added type
@@ -131,10 +132,10 @@ async def test_insert_feedback(db_instance): # Made async
 
 @pytest.mark.asyncio # Mark test as async
 async def test_insert_error(db_instance): # Made async
-    session = db_instance.Session(start_time=datetime.now()) # Use db_instance.Session
+    session = Session(start_time=datetime.now()) # Use db_instance.Session
     session_id = await db_instance.insert_session(session) # Await DB operation
 
-    error = db_instance.Error( # Use db_instance.Error
+    error = Error( # Use db_instance.Error
         session_id=session_id,
         message="API call failed",
         details="Network error",
@@ -149,8 +150,8 @@ async def test_insert_error(db_instance): # Made async
 
 @pytest.mark.asyncio # Mark test as async
 async def test_get_all_sessions(db_instance): # Made async
-    session1 = db_instance.Session(start_time=datetime.now() - timedelta(hours=1)) # Use db_instance.Session
-    session2 = db_instance.Session(start_time=datetime.now()) # Use db_instance.Session
+    session1 = Session(start_time=datetime.now() - timedelta(hours=1)) # Use db_instance.Session
+    session2 = Session(start_time=datetime.now()) # Use db_instance.Session
     await db_instance.insert_session(session1) # Await DB operation
     await db_instance.insert_session(session2) # Await DB operation
 
