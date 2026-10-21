@@ -1,3 +1,9 @@
+> [!WARNING]
+> **Historical alpha prototype (June 2025). Not production instrumentation.**
+> The published OpenAI and Hugging Face example adapters currently wrap **mock provider classes**; they do not establish telemetry from real provider SDK calls. Tokens and costs in those examples are synthetic or illustrative. This repository has not been validated against current provider releases or independently audited for security/reliability. Treat screenshots as prototype illustrations, not live customer traces.
+>
+> For a real production integration, first replace mocks with supported SDK callbacks, add live-provider opt-in integration tests, secure prompt/PII handling, error/streaming support, and repeatable CI. This project remains in the historical archive rather than the flagship engineering showcase.
+
 # LLMTrace: Observabilidad y Trazabilidad para Aplicaciones con LLM
 
 **LLMTrace** es una librería open-source en Python diseñada como un toolkit de observabilidad y evaluación para aplicaciones con modelos de lenguaje. Permite a los desarrolladores instrumentar sus apps de IA generativa para registrar automáticamente prompts y respuestas, medir métricas clave y visualizar trazas de las sesiones.
